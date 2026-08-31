@@ -90,9 +90,21 @@ def glacial_transparent(rgb, alpha, params=None, key_tol=22):
         rgba[..., 3] = np.clip(rgba[..., 3] * fg, 0, 255)
         rgba = rgba.astype(np.uint8)
     return rgba
-    """Glacial neon linework with transparent background -> uint8 RGBA."""
-    comp = composite_on_white(rgb, alpha)
-    return glacial_grade_alpha(comp, params)
+
+
+# matched to the user's example (render_cable_hi1/hi2.png): cold cinematic,
+# lifted teal-blue blacks, compressed highlights, no glow, no vignette.
+CINEMATIC = dict(
+    darken=0.72, desat=0.75, cool=1.20, fog=0.10,
+    shadow_tint=[0.074, 0.114, 0.148],
+)
+
+
+def cinematic_style(rgb, alpha=None, params=None):
+    """Cold cinematic grade matching the example look. Returns uint8 RGB."""
+    params = params or CINEMATIC
+    comp = composite_on_void(rgb, alpha)
+    return render_grade(comp, params)
 
 
 PRESETS = {
@@ -154,7 +166,8 @@ def save_rgba(path, rgba):
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else None
     if not src:
-        print("usage: python style_render.py <input.png> [out_path] [--preset balanced|moody|luminous|glacial]")
+        print("usage: python style_render.py <input.png> "
+              "[out_path] [--preset balanced|moody|luminous|glacial|cinematic]")
         sys.exit(1)
     out_path = None
     preset = None
@@ -184,6 +197,18 @@ def main():
             out_path = os.path.join("renders", f"{base}.glacial-transparent.png")
         os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
         save_rgba(out_path, rgba)
+        print(f"wrote {out_path}")
+        return
+
+    # --- cold cinematic grade matched to the example ------------------------
+    if preset == "cinematic":
+        if alpha is None:
+            alpha = key_background_alpha(rgb)   # drop white surround -> void
+        styled = cinematic_style(rgb, alpha)
+        if out_path is None:
+            out_path = os.path.join("renders", f"{base}.cinematic.png")
+        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+        save(out_path, styled)
         print(f"wrote {out_path}")
         return
 
