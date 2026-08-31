@@ -51,7 +51,45 @@ def composite_on_white(rgb, alpha):
     return np.clip(f * a + WHITE[None, None, :] * (1 - a), 0, 255).astype(np.uint8)
 
 
-def glacial_transparent(rgb, alpha, params=None):
+def key_background_alpha(rgb, tol=22, blur=0.8):
+    """Key out a near-uniform white surround via border-seeded flood fill.
+
+    Returns a uint8 foreground alpha (255 = keep, 0 = drop) with soft edges.
+    Used for renders exported without an alpha channel but on a white backdrop.
+    """
+    h, w = rgb.shape[:2]
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+    for sy, sx in [(0, 0), (0, w - 1), (h - 1, 0), (h - 1, w - 1)]:
+        mm = np.zeros((h + 2, w + 2), np.uint8)
+        cv2.floodFill(gray, mm, (sx, sy), 0, loDiff=tol, upDiff=tol,
+                      flags=8 | (255 << 8) | cv2.FLOODFILL_FIXED_RANGE)
+        mask = cv2.bitwise_or(mask, mm)
+    bg = (mask[1:-1, 1:-1] > 0).astype(np.uint8) * 255
+    fg = 255 - bg
+    fg = cv2.GaussianBlur(fg, (0, 0), blur)
+    return fg.astype(np.uint8)
+
+
+def glacial_transparent(rgb, alpha, params=None, key_tol=22):
+    """Glacial neon linework with transparent background -> uint8 RGBA.
+
+    Sources without an alpha channel get their white backdrop keyed out first.
+    """
+    keyed = None
+    if alpha is None:
+        keyed = key_background_alpha(rgb, tol=key_tol)
+        alpha = keyed
+    comp = composite_on_white(rgb, alpha)
+    rgba = glacial_grade_alpha(comp, params)
+
+    # kill any glow halo that bleeds into the keyed-out background
+    if keyed is not None:
+        fg = (keyed.astype(np.float32) / 255.0)
+        rgba = rgba.astype(np.float32)
+        rgba[..., 3] = np.clip(rgba[..., 3] * fg, 0, 255)
+        rgba = rgba.astype(np.uint8)
+    return rgba
     """Glacial neon linework with transparent background -> uint8 RGBA."""
     comp = composite_on_white(rgb, alpha)
     return glacial_grade_alpha(comp, params)
