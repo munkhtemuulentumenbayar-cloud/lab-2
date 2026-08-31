@@ -80,6 +80,57 @@ def glacial_grade(img, params=None):
     return from_float(result)
 
 
+def glacial_grade_alpha(img, params=None):
+    """Glacial grade with a transparent background (RGBA) instead of the void.
+
+    Emits the exact same emerald->cyan->white linework and bioluminescent
+    glow as glacial_grade, but the void backdrop is dropped: background/fill
+    pixels get alpha ~ 0 and linework + glow carry proportional alpha, so the
+    neon geometry can float over any deliverable sheet.
+    """
+    p = params or {}
+    line_lo      = p.get("line_lo", 0.20)
+    blur_sigma   = p.get("blur_sigma", 6.0)
+    glow_sigma   = p.get("glow_sigma", 12.0)
+    glow_amount  = p.get("glow_amount", 0.55)
+    cyan_bias    = p.get("cyan_bias", 0.55)
+    white_core   = p.get("white_core", 0.35)
+
+    f = to_float(img)
+    rgb = f[..., :3]
+    gray = (0.2126*rgb[...,0] + 0.7152*rgb[...,1] + 0.0722*rgb[...,2])
+
+    line = np.clip((BG - gray) / max(BG - line_lo, 1e-3), 0, 1)
+    line = line ** p.get("line_gamma", 1.4)
+
+    blurred = cv2.GaussianBlur(line, (0, 0), blur_sigma)
+    ratio = blurred / (line + 1e-4)
+    bold = np.clip((ratio - 0.45) / 0.40, 0, 1)
+    tfactor = np.clip((bold - (1-cyan_bias)) / cyan_bias, 0, 1)
+
+    line_col = EMERALD[None, None, :]*(1-tfactor[..., None]) + ICE_CYAN[None, None, :]*tfactor[..., None]
+    core_w = np.clip((line - 0.72)/0.28, 0, 1) * white_core
+    line_col = line_col*(1-core_w[..., None]) + ICE_WHITE[None, None, :]*core_w[..., None]
+
+    lum_map = line * (0.5 + 0.5*tfactor)
+    glow = cv2.GaussianBlur(lum_map, (0, 0), glow_sigma)
+
+    # coverage: linework + bioluminescent halo; void becomes fully transparent
+    alpha = np.clip(line + glow*glow_amount, 0, 1)
+
+    # premultiplied foreground colour (glow halo leans cyan like the original)
+    glow_col = ICE_CYAN*0.7 + EMERALD*0.3
+    premult = line_col*line[..., None] + glow_col[None, None, :]*(glow*glow_amount)[..., None]
+
+    # convert premultiplied -> straight alpha for standard compositors
+    rgb_out = np.zeros_like(premult)
+    m = alpha > 1e-4
+    rgb_out[m] = np.clip(premult[m] / alpha[m][..., None], 0, 1)
+
+    rgba = np.concatenate([rgb_out, alpha[..., None]], axis=-1)
+    return from_float(rgba)
+
+
 def vignette_factor(h, w):
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     cx, cy = w/2, h/2
