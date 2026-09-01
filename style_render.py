@@ -95,16 +95,45 @@ def glacial_transparent(rgb, alpha, params=None, key_tol=22):
 # matched to the user's example (render_cable_hi1/hi2.png): cold cinematic,
 # lifted teal-blue blacks, compressed highlights, no glow, no vignette.
 CINEMATIC = dict(
-    darken=0.72, desat=0.75, cool=1.20, fog=0.10,
-    shadow_tint=[0.074, 0.114, 0.148],
+    darken=1.00, desat=0.75, cool=1.00, fog=0.09,
+    shadow_tint=[0.070, 0.110, 0.145],
 )
 
 
-def cinematic_style(rgb, alpha=None, params=None):
-    """Cold cinematic grade matching the example look. Returns uint8 RGB."""
+def luma(rgb):
+    return 0.2126*rgb[..., 0] + 0.7152*rgb[..., 1] + 0.0722*rgb[..., 2]
+
+
+def detail_boost(graded, src, strength=0.85, sigma=1.6):
+    """Re-inject the source's high-frequency detail into the graded image.
+
+    The cold grade's tone compression + desaturation soften micro-contrast.
+    This adds back a band-pass detail layer from the original luminance while
+    preserving the graded colour balance (channels scaled by the luminance
+    ratio, so hue/saturation stay intact).
+    """
+    g = graded.astype(np.float32)
+    s = src.astype(np.float32)
+    gy = luma(g)
+    sy = luma(s)
+    detail = sy - cv2.GaussianBlur(sy, (0, 0), sigma)
+    ny = np.clip(gy + detail * strength, 0, 255)
+    scale = np.where(gy > 1e-3, ny / (gy + 1e-3), 1.0)
+    out = np.clip(g * scale[..., None], 0, 255)
+    return out.astype(np.uint8)
+
+
+def cinematic_style(rgb, alpha=None, params=None, detail=0.85):
+    """Cold cinematic grade matching the example look, with detail preserved.
+
+    Returns uint8 RGB.
+    """
     params = params or CINEMATIC
     comp = composite_on_void(rgb, alpha)
-    return render_grade(comp, params)
+    out = render_grade(comp, params)
+    if detail and detail > 0:
+        out = detail_boost(out, comp, strength=detail)
+    return out
 
 
 PRESETS = {

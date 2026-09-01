@@ -76,35 +76,71 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def index(self):
+        IMG_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif")
         files = sorted(os.listdir(DIR))
-        rows = []
+        cards = []
+        # feature the newest "matched cinematic style" outputs first
+        def rank(name):
+            n = name.lower()
+            if "cinematic" in n:
+                return 0
+            if "glacial-transparent" in n:
+                return 1
+            if n.startswith("preview"):
+                return 2
+            return 3
+        files.sort(key=lambda n: (rank(n), n))
         for name in files:
             fp = os.path.join(DIR, name)
             if not os.path.isfile(fp):
                 continue
+            ext = os.path.splitext(name)[1].lower()
+            if ext not in IMG_EXT:
+                continue
             size = human(os.path.getsize(fp))
             q = urllib.parse.quote(name)
-            rows.append(
-                f"<tr><td>{name}</td><td>{size}</td>"
-                f"<td><a href='/download/{q}'>Download</a></td>"
-                f"<td><a href='/view/{q}' target='_blank'>View</a></td></tr>"
+            badge = ""
+            if "cinematic" in name.lower():
+                badge = "<span class='badge'>NEW · matched style</span>"
+            elif "glacial-transparent" in name.lower():
+                badge = "<span class='badge'>no background</span>"
+            cards.append(
+                f"<figure class='card'>"
+                f"<a href='/view/{q}' target='_blank'>"
+                f"<img loading='lazy' src='/view/{q}' alt='{name}'></a>"
+                f"<figcaption>{badge}<br>{name}<br>"
+                f"<span class='size'>{size}</span> · "
+                f"<a href='/download/{q}'>Download</a></figcaption>"
+                f"</figure>"
             )
         html = f"""<!doctype html><html><head><meta charset='utf-8'>
-<title>Arctic Lens renders</title><style>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Arctic Lens — rendered previews</title><style>
 body{{font-family:system-ui,Segoe UI,sans-serif;background:#0a0f1a;color:#dfefff;
- margin:0;padding:40px}} h1{{color:#7de1ff;font-weight:600}}
- table{{border-collapse:collapse;width:100%;max-width:900px;margin-top:16px}}
- td,th{{padding:10px 14px;border-bottom:1px solid #16233a;text-align:left;font-size:14px}}
- a{{color:#39ffb0;text-decoration:none}} a:hover{{text-decoration:underline}}
- th{{color:#8fb0cc;font-weight:600}}
- .hint{{color:#8fb0cc;margin-top:24px;font-size:13px}}
+ margin:0;padding:32px}}
+h1{{color:#7de1ff;font-weight:600;font-size:22px}}
+.sub{{color:#8fb0cc;margin-top:4px;font-size:13px}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));
+ gap:22px;margin-top:22px}}
+.card{{margin:0;background:#0e1524;border:1px solid #16233a;border-radius:10px;
+ overflow:hidden}}
+.card img{{width:100%;height:auto;display:block;background:
+ repeating-conic-gradient(#1a2334 0% 25%, #101827 0% 50%) 50%/24px 24px}}
+.card figcaption{{padding:10px 12px;font-size:13px;color:#cfE5ff;line-height:1.5}}
+.size{{color:#7d93ae}}
+.badge{{display:inline-block;background:#0f3d2e;color:#39ffb0;border:1px solid #1e6b4a;
+ border-radius:999px;padding:1px 9px;font-size:11px;font-weight:600;
+ margin-bottom:4px;letter-spacing:.4px}}
+a{{color:#39ffb0;text-decoration:none}} a:hover{{text-decoration:underline}}
+.hint{{color:#8fb0cc;margin-top:28px;font-size:13px}}
 </style></head><body>
-<h1>Arctic Lens — rendered files</h1>
-<table><tr><th>File</th><th>Size</th><th></th><th></th></tr>
-{''.join(rows)}
-</table>
-<div class='hint'>“Download” saves the file to your computer. “View” opens it in a new tab
- (right-click → Save image as… on a PNG also works).</div>
+<h1>Arctic Lens — rendered previews</h1>
+<div class='sub'>Click any image to open it full size in a new tab;
+ use <b>Download</b> to save the PNG to your computer.</div>
+<div class='grid'>{''.join(cards)}</div>
+<div class='hint'>Tip: a PNG with a transparent background shows on a checkerboard
+ pattern here; open it full-size and right-click → Save image as… to keep the
+ transparency.</div>
 </body></html>"""
         self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
