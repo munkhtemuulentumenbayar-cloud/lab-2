@@ -8,7 +8,7 @@ import os
 import time
 import cv2
 
-SRC = "renders/render 3.cinematic.png"
+SRC = "renders/render 3.glacial-cable.png"
 OUT_JPG = "renders/render 3.16k.jpg"
 OUT_PNG = "renders/render 3.16k.png"
 W, H = 15360, 8640          # 16K UHD (16:9)
