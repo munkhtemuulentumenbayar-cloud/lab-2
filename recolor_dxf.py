@@ -6,15 +6,21 @@ What it does (everything is layer-driven, so it stays easy to edit):
 
   1. LAYER COLOURS  -> Cyber-Glacial neon palette (true-colour RGB)
   2. LINE THICKNESS -> layered lineweight hierarchy (primary bold -> detail fine)
-  3. BACKGROUND     -> solid void (#0A0F1A) for model & paper space viewports
-  4. FILLS          -> wall poche / area hatches moved to a muted 'hatch' layer
-                       (subtle VOID_LIGHT instead of bright neon fills)
+  3. FILLS ("water colour") -> area hatches / wall poche become a soft, visible
+                       CYAN wash (ICE_CYAN at ~55% transparency)
+  4. BACKGROUND     -> a real solid dark rectangle (VOID_DARK) drawn behind the
+                       whole sheet on its own 'BACKGROUND' layer, so the board
+                       has the dark void when viewed/plotted/exported
   5. GLOW LAYERS    -> transparent cyan/emerald underlays under the primary and
                        secondary linework to recreate the bioluminescent bloom
-                       (freeze or delete GLOW-* if you prefer clean lines)
 
-The embedded render (IMAGE on layer '0') is left completely untouched —
-you will place the final renders yourself.
+The embedded render (IMAGE on layer '0') is left completely untouched — you
+will place the final renders yourself.
+
+NOTE for the on-screen editor background: AutoCAD's model-space background is a
+DISPLAY setting (OPTIONS -> Display -> Colors -> '2D model space' -> 'Uniform
+background'), it is not stored in the drawing. Set it to RGB 10,15,26 (#0A0F1A)
+to match. The BACKGROUND layer here gives the same dark void for plot/export.
 
 Palette (from glacial.py):
     ICE_CYAN    (125, 235, 255)  #7DEBFF
@@ -24,8 +30,7 @@ Palette (from glacial.py):
     VOID_DARK   ( 10,  15,  26)  #0A0F1A
 """
 import ezdxf
-from ezdxf.lldxf.types import DXFTag
-from ezdxf.lldxf.extendedtags import ExtendedTags
+from ezdxf import bbox
 from ezdxf.colors import float2transparency
 
 SRC = "TAVOLE.dxf"
@@ -46,8 +51,10 @@ LAYERS = {
     "4TH DETAILS": (EMERALD,    15),   # fine detail             0.15 mm
     "LAYOUT":      (ICE_CYAN,   50),   # sheet frames            0.50 mm
     "TEXTS":       (ICE_WHITE,  25),   # text / annotations      0.25 mm
-    "hatch":       (VOID_LIGHT,  9),   # fills / wall poche      0.09 mm
+    "hatch":       (ICE_CYAN,    9),   # fills / wall poche      (soft cyan wash)
 }
+
+FILL_TRANSPARENCY = 0.55   # "water colour" wash: 55% see-through
 
 # glow underlays
 GLOW = {
@@ -58,27 +65,10 @@ GLOW = {
 GLOW_TYPES = ("LINE", "SPLINE", "LWPOLYLINE", "ARC", "CIRCLE", "POLYLINE")
 
 ACCENT = EMERALD     # red accent entities -> emerald (keeps the highlight)
-VOID_DARK_INT = (VOID_DARK[0] << 16) | (VOID_DARK[1] << 8) | VOID_DARK[2]
 
 
-def add_background(doc, owner_handle, rgb_int):
-    """Solid BACKGROUND object (viewport colour) owned by a block record.
-
-    Written to match AutoCAD's real structure: ACAD_REACTORS + owner both
-    pointing at the owning BLOCK_RECORD, then AcDbBackground with only the
-    solid-type codes (90=0, 63=RGB). No 73/83 (those are gradient-only).
-    """
-    obj = doc.objects.add_dxf_object_with_reactor("BACKGROUND", {"owner": owner_handle})
-    handle = obj.dxf.handle
-    obj.store_tags(ExtendedTags([
-        DXFTag(0, "BACKGROUND"),
-        DXFTag(5, handle),
-        DXFTag(330, owner_handle),
-        DXFTag(100, "AcDbBackground"),
-        DXFTag(90, 0),             # type 0 = solid
-        DXFTag(63, rgb_int),       # 24-bit colour (0xRRGGBB)
-    ]))
-    return obj
+def set_layer_transparency(layer, value):
+    layer.set_xdata("AcCmTransparency", [(1071, float2transparency(value))])
 
 
 def main():
@@ -94,17 +84,13 @@ def main():
             continue
         layer.rgb = rgb
         layer.dxf.lineweight = lw
-        print(f"  {name!r:14s} {rgb}  lw {lw} ({lw/100:.2f} mm)")
+        if name == "hatch":
+            set_layer_transparency(layer, FILL_TRANSPARENCY)
+        print(f"  {name!r:14s} {rgb}  lw {lw} ({lw/100:.2f} mm)"
+              + ("  55% transparent wash" if name == "hatch" else ""))
 
-    # 2. background colour ---------------------------------------------------
-    print("\n=== background ===")
-    for br in doc.block_records:
-        if br.dxf.name.startswith("*Model_Space") or br.dxf.name.startswith("*Paper_Space"):
-            add_background(doc, br.dxf.handle, VOID_DARK_INT)
-            print(f"  {br.dxf.name!r} -> #{VOID_DARK[0]:02X}{VOID_DARK[1]:02X}{VOID_DARK[2]:02X}")
-
-    # 3. fills -> muted 'hatch' layer ---------------------------------------
-    print("\n=== fills (hatch) ===")
+    # 2. fills -> 'hatch' layer (visible cyan wash) --------------------------
+    print("\n=== fills (hatch -> cyan 'water colour' wash) ===")
     moved_hatch = 0
     for e in msp:
         if e.dxftype() == "HATCH" and e.dxf.layer != "TEXTS":
@@ -115,9 +101,9 @@ def main():
             if e.dxf.get("lineweight", -1) >= 0:
                 e.dxf.lineweight = -1
             moved_hatch += 1
-    print(f"  {moved_hatch} hatch entities -> 'hatch' layer (muted VOID_LIGHT)")
+    print(f"  {moved_hatch} hatch entities -> 'hatch' layer (ICE_CYAN wash)")
 
-    # 4. entity overrides -> clean, layer-driven sheet ------------------------
+    # 3. entity overrides -> clean, layer-driven sheet ------------------------
     print("\n=== entity overrides ===")
     accent = reset_col = reset_lw = 0
     for e in msp:
@@ -150,25 +136,21 @@ def main():
     print(f"  {reset_lw} lineweight overrides -> BYLAYER")
     print("  IMAGE (render) untouched on layer '0'")
 
-    # 5. glow underlays ------------------------------------------------------
+    # 4. glow underlays ------------------------------------------------------
     print("\n=== glow layers ===")
     for name, spec in GLOW.items():
         layer = doc.layers.add(name, color=7)
         layer.rgb = spec["color"]
         layer.dxf.lineweight = spec["lw"]
         layer.dxf.linetype = "Continuous"
-        layer.set_xdata("AcCmTransparency",
-                        [(1071, float2transparency(spec["transparency"]))])
+        set_layer_transparency(layer, spec["transparency"])
 
         copies = []
         for e in msp:
             if e.dxf.layer == spec["source"] and e.dxftype() in GLOW_TYPES:
                 c = e.copy()
-                # strip extension dictionaries & reactors from the copy so it
-                # is a clean plain entity — otherwise copies of entities that
-                # carry plugin proxy data (e.g. TC_EXTENDED_DATA) keep a
-                # dangling reference to the original proxy object, which
-                # AutoCAD rejects on open.
+                # strip extension dictionaries & reactors from the copy so it is
+                # a clean plain entity (avoids dangling plugin-proxy refs)
                 if c.has_extension_dict:
                     c.discard_extension_dict()
                 c.dxf.layer = name
@@ -182,6 +164,50 @@ def main():
         print(f"  {name!r:14s} {spec['color']}  lw {spec['lw']} "
               f"({spec['lw']/100:.2f} mm)  {spec['transparency']:.0%} transparent  "
               f"<- {len(copies)} entities from {spec['source']!r}")
+
+    # 5. background rectangle (dark void behind the whole board) ------------
+    print("\n=== background layer ===")
+    bg_layer = doc.layers.add("BACKGROUND", color=7)
+    bg_layer.rgb = VOID_DARK
+    bg_layer.dxf.lineweight = -3
+    bg_layer.dxf.linetype = "Continuous"
+
+    # cover everything except the placeholder render image
+    entities = [e for e in msp if e.dxftype() != "IMAGE"]
+    ext = bbox.extents(entities)
+    pad = 150.0
+    x1 = ext.extmin.x - pad
+    y1 = ext.extmin.y - pad
+    x2 = ext.extmax.x + pad
+    y2 = ext.extmax.y + pad
+
+    backdrop = msp.add_hatch()
+    backdrop.dxf.layer = "BACKGROUND"
+    backdrop.dxf.color = 256
+    backdrop.set_solid_fill()
+    backdrop.paths.add_polyline_path(
+        [(x1, y1), (x2, y1), (x2, y2), (x1, y2)], is_closed=True
+    )
+    print(f"  BACKGROUND rectangle ({x1:.0f},{y1:.0f}) -> ({x2:.0f},{y2:.0f}) "
+          f"VOID_DARK {VOID_DARK}")
+
+    # place the backdrop FIRST (behind) both in database order and via draw order
+    order = list(msp)                       # everything incl. backdrop (last)
+    for e in order:
+        msp.unlink_entity(e)
+    msp.add_entity(backdrop)                # backdrop first -> drawn behind
+    for e in order:
+        if e is backdrop:
+            continue
+        msp.add_entity(e)
+
+    # explicit draw order: backdrop gets the smallest sort handle (drawn first)
+    redraw = {backdrop.dxf.handle: "1"}
+    for i, e in enumerate(order, start=1):
+        if e is backdrop:
+            continue
+        redraw[e.dxf.handle] = f"{i + 0x100:X}"
+    msp.set_redraw_order(redraw)
 
     doc.saveas(DST)
     print(f"\nsaved {DST}")
