@@ -19,9 +19,38 @@ Lineweight hierarchy (lineweight unit = 1/100 mm):
      9 -> 0.09 mm  hatch fills
 """
 import ezdxf
+from ezdxf.lldxf.types import DXFTag
+from ezdxf.lldxf.extendedtags import ExtendedTags
 
 SRC = "TAVOLE.dxf"
 DST = "TAVOLE_cyberglacial.dxf"
+
+# background (viewport) colour — the Cyber-Glacial void
+VOID_DARK = (10, 15, 26)          # #0A0F1A
+VOID_DARK_INT = (VOID_DARK[0] << 16) | (VOID_DARK[1] << 8) | VOID_DARK[2]
+
+
+def add_background(doc, owner_handle, rgb_int):
+    """Add a solid BACKGROUND object owned by a block record (owner_handle).
+
+    AutoCAD stores the model-/paper-space viewport background as a BACKGROUND
+    object in the OBJECTS section, owned by the corresponding BLOCK_RECORD
+    (*Model_Space, *Paper_Space, ...).  ezdxf has no high-level class for it,
+    so we build it as raw tag storage (verified structure).
+    """
+    obj = doc.objects.add_dxf_object_with_reactor("BACKGROUND", {"owner": owner_handle})
+    handle = obj.dxf.handle
+    obj.store_tags(ExtendedTags([
+        DXFTag(0, "BACKGROUND"),
+        DXFTag(5, handle),
+        DXFTag(330, owner_handle),
+        DXFTag(100, "AcDbBackground"),
+        DXFTag(90, 0),            # type 0 = solid
+        DXFTag(63, rgb_int),      # model-space colour
+        DXFTag(73, rgb_int),      # paper-space colour
+        DXFTag(83, rgb_int),
+    ]))
+    return obj
 
 # layer -> (RGB colour, lineweight in 1/100 mm)
 LAYERS = {
@@ -91,6 +120,13 @@ def main():
     print(f"  {reset_col} entity colour overrides reset to BYLAYER")
     print(f"  {reset_lw} entity lineweight overrides reset to BYLAYER")
     print("  IMAGE (render) left untouched on layer '0'")
+
+    # --- background (viewport) colour -------------------------------------
+    print("\n=== background colour ===")
+    for br in doc.block_records:
+        if br.dxf.name.startswith("*Model_Space") or br.dxf.name.startswith("*Paper_Space"):
+            add_background(doc, br.dxf.handle, VOID_DARK_INT)
+            print(f"  {br.dxf.name!r} -> solid background {VOID_DARK} #{VOID_DARK[0]:02X}{VOID_DARK[1]:02X}{VOID_DARK[2]:02X}")
 
     doc.saveas(DST)
     print(f"\nsaved {DST}")
