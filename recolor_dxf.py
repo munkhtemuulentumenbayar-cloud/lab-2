@@ -89,11 +89,14 @@ def main():
         print(f"  {name!r:14s} {rgb}  lw {lw} ({lw/100:.2f} mm)"
               + ("  55% transparent wash" if name == "hatch" else ""))
 
-    # 2. fills -> 'hatch' layer (visible cyan wash) --------------------------
-    print("\n=== fills (hatch -> cyan 'water colour' wash) ===")
-    moved_hatch = 0
+    # 2. fills -> SOLID 'hatch' layer (visible cyan wash) --------------------
+    print("\n=== fills (hatch -> SOLID cyan 'water colour' wash) ===")
+    moved_hatch = solidified = 0
     for e in msp:
         if e.dxftype() == "HATCH" and e.dxf.layer != "TEXTS":
+            if e.dxf.pattern_name != "SOLID":
+                e.set_solid_fill(color=256)        # patterned -> solid fill
+                solidified += 1
             e.dxf.layer = "hatch"
             if e.dxf.hasattr("true_color"):
                 e.dxf.discard("true_color")
@@ -102,6 +105,7 @@ def main():
                 e.dxf.lineweight = -1
             moved_hatch += 1
     print(f"  {moved_hatch} hatch entities -> 'hatch' layer (ICE_CYAN wash)")
+    print(f"  {solidified} patterned hatches converted to SOLID")
 
     # 3. entity overrides -> clean, layer-driven sheet ------------------------
     print("\n=== entity overrides ===")
@@ -191,22 +195,32 @@ def main():
     print(f"  BACKGROUND rectangle ({x1:.0f},{y1:.0f}) -> ({x2:.0f},{y2:.0f}) "
           f"VOID_DARK {VOID_DARK}")
 
-    # place the backdrop FIRST (behind) both in database order and via draw order
+    # physically order the modelspace: backdrop -> fills -> glow -> linework
+    # (this also fixes the database order so previews/plots match the draw order)
     order = list(msp)                       # everything incl. backdrop (last)
+    grouped = (
+        [backdrop]
+        + [e for e in order if e is not backdrop and e.dxf.layer == "hatch"]
+        + [e for e in order if e.dxf.layer.startswith("GLOW")]
+        + [e for e in order
+           if e is not backdrop
+           and e.dxf.layer != "hatch"
+           and not e.dxf.layer.startswith("GLOW")]
+    )
     for e in order:
         msp.unlink_entity(e)
-    msp.add_entity(backdrop)                # backdrop first -> drawn behind
-    for e in order:
-        if e is backdrop:
-            continue
+    for e in grouped:
         msp.add_entity(e)
 
-    # explicit draw order: backdrop gets the smallest sort handle (drawn first)
-    redraw = {backdrop.dxf.handle: "1"}
-    for i, e in enumerate(order, start=1):
+    # explicit draw order: backdrop -> fills -> glow -> linework
+    # (smallest sort handle = drawn first = behind)
+    redraw = {backdrop.dxf.handle: "00000001"}
+    n = 2
+    for e in grouped:
         if e is backdrop:
             continue
-        redraw[e.dxf.handle] = f"{i + 0x100:X}"
+        redraw[e.dxf.handle] = f"{n:08X}"
+        n += 1
     msp.set_redraw_order(redraw)
 
     doc.saveas(DST)
