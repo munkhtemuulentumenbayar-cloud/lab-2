@@ -62,7 +62,12 @@ VOID_DARK_INT = (VOID_DARK[0] << 16) | (VOID_DARK[1] << 8) | VOID_DARK[2]
 
 
 def add_background(doc, owner_handle, rgb_int):
-    """Solid BACKGROUND object (viewport colour) owned by a block record."""
+    """Solid BACKGROUND object (viewport colour) owned by a block record.
+
+    Written to match AutoCAD's real structure: ACAD_REACTORS + owner both
+    pointing at the owning BLOCK_RECORD, then AcDbBackground with only the
+    solid-type codes (90=0, 63=RGB). No 73/83 (those are gradient-only).
+    """
     obj = doc.objects.add_dxf_object_with_reactor("BACKGROUND", {"owner": owner_handle})
     handle = obj.dxf.handle
     obj.store_tags(ExtendedTags([
@@ -70,10 +75,8 @@ def add_background(doc, owner_handle, rgb_int):
         DXFTag(5, handle),
         DXFTag(330, owner_handle),
         DXFTag(100, "AcDbBackground"),
-        DXFTag(90, 0),             # solid
-        DXFTag(63, rgb_int),       # model-space colour
-        DXFTag(73, rgb_int),       # paper-space colour
-        DXFTag(83, rgb_int),
+        DXFTag(90, 0),             # type 0 = solid
+        DXFTag(63, rgb_int),       # 24-bit colour (0xRRGGBB)
     ]))
     return obj
 
@@ -161,6 +164,13 @@ def main():
         for e in msp:
             if e.dxf.layer == spec["source"] and e.dxftype() in GLOW_TYPES:
                 c = e.copy()
+                # strip extension dictionaries & reactors from the copy so it
+                # is a clean plain entity — otherwise copies of entities that
+                # carry plugin proxy data (e.g. TC_EXTENDED_DATA) keep a
+                # dangling reference to the original proxy object, which
+                # AutoCAD rejects on open.
+                if c.has_extension_dict:
+                    c.discard_extension_dict()
                 c.dxf.layer = name
                 if c.dxf.hasattr("true_color"):
                     c.dxf.discard("true_color")
