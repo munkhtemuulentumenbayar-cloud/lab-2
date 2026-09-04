@@ -9,3 +9,7 @@ out/
 
 # OS
 .DS_Store
+
+# SR model files (large, re-downloadable)
+models/
+uploads/
