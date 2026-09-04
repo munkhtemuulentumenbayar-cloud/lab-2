@@ -56,10 +56,19 @@ LAYERS = {
 
 FILL_TRANSPARENCY = 0.55   # "water colour" wash: 55% see-through
 
-# glow underlays
+# glow underlays — a transparent thick neon copy placed behind each linework
+# layer. Halo thickness ~2x the source lineweight so thin lines glow softly and
+# bold lines bloom wider. Every linework layer gets one so the whole sheet
+# reads uniformly glowing (only TEXTS stays crisp for legibility).
 GLOW = {
-    "GLOW-CYAN":    dict(color=ICE_CYAN, lw=100, transparency=0.80, source="1ST"),
-    "GLOW-EMERALD": dict(color=EMERALD,  lw=70,  transparency=0.80, source="2ND"),
+    "GLOW-CYAN":      dict(color=ICE_CYAN, lw=100, transparency=0.80,
+                           sources=["1ST", "LAYOUT"]),
+    "GLOW-EMERALD":   dict(color=EMERALD,  lw=70,  transparency=0.80,
+                           sources=["2ND"]),
+    "GLOW-CYAN-2":    dict(color=ICE_CYAN, lw=50,  transparency=0.80,
+                           sources=["3RD"]),
+    "GLOW-EMERALD-2": dict(color=EMERALD,  lw=30,  transparency=0.80,
+                           sources=["4TH DETAILS"]),
 }
 
 GLOW_TYPES = ("LINE", "SPLINE", "LWPOLYLINE", "ARC", "CIRCLE", "POLYLINE")
@@ -151,7 +160,7 @@ def main():
 
         copies = []
         for e in msp:
-            if e.dxf.layer == spec["source"] and e.dxftype() in GLOW_TYPES:
+            if e.dxf.layer in spec["sources"] and e.dxftype() in GLOW_TYPES:
                 c = e.copy()
                 # strip extension dictionaries & reactors from the copy so it is
                 # a clean plain entity (avoids dangling plugin-proxy refs)
@@ -167,7 +176,7 @@ def main():
             msp.add_entity(c)
         print(f"  {name!r:14s} {spec['color']}  lw {spec['lw']} "
               f"({spec['lw']/100:.2f} mm)  {spec['transparency']:.0%} transparent  "
-              f"<- {len(copies)} entities from {spec['source']!r}")
+              f"<- {len(copies)} entities from {spec['sources']}")
 
     # 5. background rectangle (dark void behind the whole board) ------------
     print("\n=== background layer ===")
