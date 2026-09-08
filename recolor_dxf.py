@@ -179,9 +179,11 @@ def main():
               f"<- {len(copies)} entities from {spec['sources']}")
 
     # 5. background rectangle (dark void behind the whole board) ------------
+    # Pure black (0,0,0) instead of the navy #0A0F1A: black prints with only
+    # the K (black) cartridge, while navy needs C+M+K = much more ink.
     print("\n=== background layer ===")
     bg_layer = doc.layers.add("BACKGROUND", color=7)
-    bg_layer.rgb = VOID_DARK
+    bg_layer.rgb = (0, 0, 0)
     bg_layer.dxf.lineweight = -3
     bg_layer.dxf.linetype = "Continuous"
 
@@ -195,14 +197,14 @@ def main():
     y2 = ext.extmax.y + pad
 
     backdrop = msp.add_hatch()
+    backdrop.set_solid_fill(color=256)   # BYLAYER -> follows BACKGROUND layer (0,0,0)
     backdrop.dxf.layer = "BACKGROUND"
     backdrop.dxf.color = 256
-    backdrop.set_solid_fill()
     backdrop.paths.add_polyline_path(
         [(x1, y1), (x2, y1), (x2, y2), (x1, y2)], is_closed=True
     )
     print(f"  BACKGROUND rectangle ({x1:.0f},{y1:.0f}) -> ({x2:.0f},{y2:.0f}) "
-          f"VOID_DARK {VOID_DARK}")
+          f"pure black (0,0,0)")
 
     # physically order the modelspace: backdrop -> fills -> glow -> linework
     # (this also fixes the database order so previews/plots match the draw order)
