@@ -57,7 +57,7 @@ The Arctic Lens responds with extreme lightness. The 108-tonne total structural 
 
 ### 2.2 Territorial Infrastructure and Access Logistics
 
-- **Land Access (Territorial Master Plan — Scale 1:1500):** A spur from highway E10 enters a granite tunnel leading to a subsurface smart logistics terminal carved 15 m inside the mountain, completely invisible from the exterior landscape.
+- **Land Access (Territorial Master Plan — Tavola 1, Scale 1:7500):** A spur from highway E10 enters a granite tunnel leading to a subsurface smart logistics terminal carved 15 m inside the mountain, completely invisible from the exterior landscape.
 - **Marine Access:** Research vessels berth at a floating ocean dock set 200 m from the cliff. Moored 5 m below the surface, the dock exerts no compressive pressure on the seabed, fully protecting the *Lophelia pertusa* coral reefs at 80–200 m depths in accordance with the Norwegian Nature Diversity Act (*Naturmangfoldloven*).
 
 ---
@@ -76,16 +76,24 @@ Horizontal bridges spanning 18 to 42 m connect the glass core to the pod matrix.
 
 ## CHAPTER IV: MORPHOLOGICAL EVOLUTION & SECTIONAL STRATIFICATION
 
-### 4.1 Pod Sectional Stratification (Tavola 3 — Section A-A', Scale 1:80)
+### 4.1 Cluster Zoning and Tier Stratification (Tavola 2)
 
-To align with the master drawing panels, the vertical domain of the cluster and its primary pod sections are stratified across four primary elevation datums:
+The 32 pods are not distributed uniformly: the cluster is organized into **four functional sectors** and rises through **four main spatial tiers**:
 
-- **Level +0.00 m (Life-Support & Technical Base):** Encloses high-pressure environmental airlocks, storage, greywater recycling loops, power distribution, and seawater heat-pump units drawing +4°C to +6°C thermal energy from a sea depth of 15 m.
-- **Level +8.00 m (Research & Active Bio-Commons):** Houses climate-controlled hydro-gardens/aquaponics, active scientific workstations, wet labs, and micro-vegetation terraces (150 mm clay aggregate soil growing dwarf polar willow and mosses).
-- **Level +16.00 m (Equatorial Social Core & Living Quarters):** Dedicated to crew accommodation pods, communal dining lounges, quiet study spaces, and archival library habitats connected face-to-face via the Ø3,600 mm open portals.
-- **Level +24.00 m (Celestial Sanctuary & Upper Apex Lens):** The uppermost residential refuge under the polyhedral dome, capped by a 100% unfritted, crystal-clear 7.3 m ETFE zenith lens. It operates as a living sundial during the summer Midnight Sun and an unobstructed viewing dome for the Aurora Borealis in winter.
+- **Cluster Zoning (Tavola 2, Scale 1:750):** the matrix is zoned into four sectors — **The Core Research Nucleus**, **The Logistics / Life-Support System**, **The Habitat & Biosphere**, and **The Eco-Cultivation**.
+- **Tier Stratification (Tavola 2):** the modules are distributed across four main spatial tiers, from **+24.00 m to +96.00 m**, with the level stratification marked at **+0.00 / +24.00 / +48.00 / +72.00 / +96.00 m**.
 
-### 4.2 Structural Anchoring & Cable Network (Tavola 2 — Scale 1:750)
+This stratification maximizes natural illumination and aerodynamic wind mitigation while preserving the floating, structural equilibrium of the whole.
+
+### 4.2 Pod Sectional Stratification (Tavola 3 — Section A-A, Scale 1:100)
+
+Within each pod, the vertical axis is stratified across three floors, each rising 8 m between the four primary elevation datums (+0.00 / +8.00 / +16.00 / +24.00 m):
+
+- **Lower Level (+0.00 m to +8.00 m) — Ground Floor (Entry & Technical Core):** the pressurized environmental Air Lock, Lobby/Entry, Provisions/Storage, and the MEP life-support systems — together with the seawater heat-pump units drawing +4°C to +6°C thermal energy from a sea depth of 15 m. This is the pod's primary structural and mechanical base.
+- **Mid Level (+8.00 m to +16.00 m) — First Floor (Research & Interactive Zone):** the active scientific domain — a Wet Lab for environmental sampling, a Dry Lab & IT Server Core, climate-controlled Hydro-Gardens/aquaponics for biological sustainment, and a central Collaboration Space.
+- **Upper Level (+16.00 m to +24.00 m) — Second Floor (Residential & Wellness Habitat):** the uppermost private tier optimized for crew well-being — compact Sleeping Quarters, a Kitchenette & Dining zone, bathroom facilities, a Wellness area, and a central Quiet Lounge — capped by the transparent polyhedral dome and its unfritted 7.3 m ETFE zenith lens, which operates as a living sundial under the Midnight Sun and a viewing dome for the Aurora Borealis in winter.
+
+### 4.3 Structural Anchoring & Cable Network (Tavola 2 — Scale 1:750)
 
 - **Primary Cables:** Ø85 mm Macalloy 460 locked-coil cables.
 - **Secondary Cables:** Ø48 mm horizontal inter-pod connections (1,200 m total cable length).
@@ -124,10 +132,13 @@ Within ten years, native lichen and moss will cover the plugged holes, rendering
 
 | Parameter | Value / Metric | Drawing Alignment |
 |---|---|---|
-| **Site Location** | 68.22°N, 13.56°E — Lofoten, Norway | Tavola 1 (Masterplan) |
-| **Primary Drawing Scales** | 1:1500 (Masterplan), 1:750 (Anchoring), 1:80 (Section) | Tavola 1, 2, 3 Title Blocks |
+| **Site Location** | 68.22°N, 13.56°E — Lofoten, Norway | Tavola 1 (Site Plan) |
+| **Drawing Scales** | 1:7500 (Site Plan) · 1:750 (Cluster Zoning & Anchoring) · 1:500 (Geometric Prototyping) · 1:1000 (Structural Elevation) · 1:100 (Pod Section A-A) · 1:150 (Interior) | Tavola 1, 2, 3 Title Blocks |
+| **Cluster Tier Stratification** | +0.00 / +24.00 / +48.00 / +72.00 / +96.00 m (four spatial tiers +24 to +96 m) | Tavola 2 (Level Stratification) |
+| **Cluster Zoning** | Core Research Nucleus · Logistics/Life-Support · Habitat & Biosphere · Eco-Cultivation | Tavola 2 (Cluster Zoning) |
 | **Suspension Elevation** | +22.00 m above fjord water line | Tavola 2 (Structural Elevation) |
-| **Pod Elevation Datums** | +0.00 m / +8.00 m / +16.00 m / +24.00 m | Tavola 2 & 3 Datums |
+| **Pod Elevation Datums** | +0.00 m / +8.00 m / +16.00 m / +24.00 m | Tavola 3 (Section A-A) |
+| **Pod Floors** | Ground (Entry & Technical) · First (Research & Interactive) · Second (Residential & Wellness) | Tavola 3 (Section A-A) |
 | **Cluster Pod Count** | 32 Truncated Octahedra (8 Labs, 12 Housing, 6 Terraces, 2 Tech, 4 Voids) | Tavola 2 (Cluster Zoning) |
 | **Pod Dimensions** | Ø10.8 m internal (12 m geometric), 4.2 m edge length | Tavola 2 & 3 Geometries |
 | **Volume / Surface Area** | 837.8 m³ volume / 282.6 m² surface area (34.2% savings vs sphere) | Tavola 2 Text Block |
