@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# generated scratch output (keep renders/ in git)
+out/
+
+# OS
+.DS_Store
+
+# SR model files (large, re-downloadable)
+models/
+uploads/
